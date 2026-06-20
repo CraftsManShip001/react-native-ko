@@ -1,0 +1,15 @@
+# Codegen이란?
+
+**Codegen**은 반복적인 코드를 많이 작성하지 않아도 되도록 도와주는 도구입니다. Codegen 사용은 **필수가 아닙니다**: 생성된 모든 코드를 직접 작성할 수 있습니다. 하지만 Codegen은 많은 시간을 절약해 줄 수 있는 스캐폴딩 코드를 생성해 줍니다.
+
+React Native는 iOS 또는 Android 앱이 빌드될 때마다 Codegen을 자동으로 실행합니다. 경우에 따라 실제로 어떤 타입과 파일이 생성되는지 확인하기 위해 Codegen 스크립트를 수동으로 실행하고 싶을 때가 있습니다. 이는 [Turbo Native Modules](/docs/turbo-native-modules-introduction) 및 Fabric Native Components를 개발할 때 흔히 나타나는 시나리오입니다.
+
+{/* TODO: Add links to TM and FC */}
+
+## Codegen의 동작 방식
+
+**Codegen**은 React Native 앱과 긴밀하게 연결된 프로세스입니다. Codegen 스크립트는 `react-native` NPM 패키지 안에 존재하며, 앱은 빌드 시 해당 스크립트를 호출합니다.
+
+Codegen은 `package.json`에 지정한 디렉터리를 시작으로 프로젝트의 폴더를 크롤링하면서, 사용자 정의 모듈과 컴포넌트에 대한 spec(사양)이 포함된 특정 JS 파일을 찾습니다. Spec 파일은 타입이 명시된 방언으로 작성된 JS 파일입니다. React Native는 현재 Flow와 TypeScript를 지원합니다.
+
+Codegen이 spec 파일을 발견할 때마다 그와 연관된 보일러플레이트 코드를 생성합니다. Codegen은 일부 C++ 글루 코드를 생성한 후, Android에는 Java를, iOS에는 Objective-C++를 사용하여 플랫폼별 코드를 생성합니다.

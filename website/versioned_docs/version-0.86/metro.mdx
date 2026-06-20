@@ -1,0 +1,112 @@
+---
+id: metro
+title: Metro
+---
+
+React Native는 JavaScript 코드와 에셋을 빌드하기 위해 [Metro](https://metrobundler.dev/)를 사용합니다.
+
+## Metro 설정하기
+
+Metro의 설정 옵션은 프로젝트의 `metro.config.js` 파일에서 커스터마이즈할 수 있습니다. 이 파일은 다음 중 하나를 내보낼 수 있습니다:
+
+- Metro의 내부 설정 기본값 위에 병합될 **객체(권장)**.
+- Metro의 내부 설정 기본값과 함께 호출되고 최종 설정 객체를 반환해야 하는 [**함수**](#고급-설정-함수-사용하기).
+
+:::tip
+사용 가능한 모든 설정 옵션에 대한 문서는 Metro 웹사이트의 [**Metro 설정하기**](https://metrobundler.dev/docs/configuration)를 참조하세요.
+:::
+
+React Native에서 Metro 설정은 [`@react-native/metro-config`](https://www.npmjs.com/package/@react-native/metro-config) 또는 [`@expo/metro-config`](https://www.npmjs.com/package/@expo/metro-config)를 확장해야 합니다. 이 패키지들에는 React Native 앱을 빌드하고 실행하는 데 필요한 필수 기본값이 포함되어 있습니다.
+
+아래는 React Native 템플릿 프로젝트의 기본 `metro.config.js` 파일입니다:
+
+{/* prettier-ignore */}
+```js
+const {
+  getDefaultConfig,
+  mergeConfig,
+} = require('@react-native/metro-config');
+
+/**
+ * Metro configuration
+ * https://metrobundler.dev/docs/configuration
+ *
+ * @type {import('metro-config').MetroConfig}
+ */
+const config = {};
+
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+```
+
+커스터마이즈하려는 Metro 옵션은 `config` 객체 내에서 설정할 수 있습니다.
+
+### 고급: 설정 함수 사용하기
+
+설정 함수를 내보내는 것은 최종 설정을 직접 관리하는 방식을 선택하는 것입니다. **Metro는 내부 기본값을 적용하지 않습니다.** 이 패턴은 Metro에서 기본 설정 객체를 읽어야 하거나 옵션을 동적으로 설정해야 할 때 유용합니다.
+
+:::info
+**`@react-native/metro-config` 0.72.1부터**는 전체 기본 설정에 접근하기 위해 설정 함수를 사용할 필요가 없어졌습니다. 아래 **팁** 섹션을 참조하세요.
+:::
+
+{/* prettier-ignore */}
+```js
+const {
+  getDefaultConfig,
+  mergeConfig,
+} = require('@react-native/metro-config');
+
+module.exports = function (baseConfig) {
+  const defaultConfig = mergeConfig(
+    baseConfig,
+    getDefaultConfig(__dirname),
+  );
+  const {
+    resolver: {assetExts, sourceExts},
+  } = defaultConfig;
+
+  return mergeConfig(defaultConfig, {
+    resolver: {
+      assetExts: assetExts.filter(ext => ext !== 'svg'),
+      sourceExts: [...sourceExts, 'svg'],
+    },
+  });
+};
+```
+
+:::tip
+설정 함수는 고급 사용 사례를 위한 것입니다. 예를 들어 `sourceExts`를 커스터마이즈하는 경우 위보다 더 간단한 방법은 `@react-native/metro-config`에서 이러한 기본값을 읽는 것입니다.
+
+**대안**
+
+{/* prettier-ignore */}
+```js
+const defaultConfig = getDefaultConfig(__dirname);
+
+const config = {
+  resolver: {
+    sourceExts: [...defaultConfig.resolver.sourceExts, 'svg'],
+  },
+};
+
+module.exports = mergeConfig(defaultConfig, config);
+```
+
+**하지만!** 이러한 설정 값을 재정의할 때는 복사하여 편집하는 방식을 권장합니다. 설정 파일에 진실의 소스를 직접 두는 것이 좋습니다.
+
+✅ **권장 방식**
+
+{/* prettier-ignore */}
+```js
+const config = {
+  resolver: {
+    sourceExts: ['js', 'ts', 'tsx', 'svg'],
+  },
+};
+```
+
+:::
+
+## Metro에 대해 더 알아보기
+
+- [Metro 웹사이트](https://metrobundler.dev/)
+- [동영상: App.js 2023에서의 "Metro & React Native DevX" 강연](https://www.youtube.com/watch?v=c9D4pg0y9cI)

@@ -1,0 +1,236 @@
+import CodeBlock from '@theme/CodeBlock';
+import {getCurrentVersion} from '@site/src/getCurrentVersion';
+
+# Codegen 사용하기
+
+이 가이드에서는 다음 내용을 설명합니다.
+
+- **Codegen** 구성 방법.
+- 각 플랫폼별로 수동으로 실행하는 방법.
+
+또한 생성된 코드에 대해서도 설명합니다.
+
+## 사전 요구 사항
+
+**Codegen**을 수동으로 실행하는 경우에도 코드를 올바르게 생성하려면 항상 React Native 앱이 필요합니다.
+
+**Codegen** 프로세스는 앱 빌드와 긴밀하게 연결되어 있으며, 스크립트는 `react-native` NPM 패키지 안에 위치합니다.
+
+이 가이드를 위해 다음과 같이 React Native CLI를 사용하여 프로젝트를 생성하세요.
+
+<CodeBlock language="bash" title="shell">
+  {`npx @react-native-community/cli@latest init SampleApp --version ${getCurrentVersion()}`}
+</CodeBlock>
+
+**Codegen**은 사용자 정의 모듈이나 컴포넌트를 위한 글루 코드(glue-code)를 생성하는 데 사용됩니다. 생성 방법에 대한 자세한 내용은 Turbo Native Modules 및 Fabric Native Components 가이드를 참조하세요.
+
+{/* TODO: add links */}
+
+## **Codegen** 구성하기
+
+**Codegen**은 `package.json` 파일을 수정하여 앱에서 구성할 수 있습니다. **Codegen**은 `codegenConfig`라는 사용자 정의 필드로 제어됩니다.
+
+```json title="package.json"
+  "codegenConfig": {
+    "name": "<SpecName>",
+    "type": "<types>",
+    "jsSrcsDir": "<source_dir>",
+    "android": {
+      "javaPackageName": "<java.package.name>"
+    },
+    "ios": {
+      "modules": {
+        "TestModule": {
+          "className": "<iOS-class-implementing-the-RCTModuleProvider-protocol>",
+          "unstableRequiresMainQueueSetup": false,
+          "conformsToProtocols": ["RCTImageURLLoader", "RCTURLRequestHandler", "RCTImageDataDecoder"],
+        }
+      },
+      "components": {
+        "TestComponent": {
+          "className": "<iOS-class-implementing-the-component>"
+        }
+      }
+    }
+  },
+```
+
+이 스니펫을 앱에 추가하고 다양한 필드를 다음과 같이 커스터마이징할 수 있습니다.
+
+- `name:` codegen 구성의 이름입니다. 파일명과 코드 등 codegen 출력을 커스터마이징합니다.
+- `type:`
+  - `modules:` 모듈에 대한 코드만 생성합니다.
+  - `components:` 컴포넌트에 대한 코드만 생성합니다.
+  - `all`: 모든 것에 대한 코드를 생성합니다.
+- `jsSrcsDir`: 모든 spec 파일이 위치하는 루트 폴더입니다.
+- `android`: Android용 Codegen 구성 (모두 선택 사항):
+  - `.javaPackageName`: Android Java codegen 출력의 패키지 이름을 구성합니다.
+- `ios`: iOS용 Codegen 구성 (모두 선택 사항):
+  - `.modules[moduleName]:`
+    - `.className`: 이 모듈의 ObjC 클래스. 또는 [C++만 사용하는 모듈](/docs/the-new-architecture/pure-cxx-modules)인 경우, `RCTModuleProvider` 클래스.
+    - `.unstableRequiresMainQueueSetup`: JavaScript를 실행하기 전에 UI 스레드에서 이 모듈을 초기화합니다.
+    - `.conformsToProtocols`: 이 모듈이 다음 프로토콜 중 어느 것을 준수하는지 표시합니다: [`RCTImageURLLoader`](https://github.com/facebook/react-native/blob/00d5caee9921b6c10be8f7d5b3903c6afe8dbefa/packages/react-native/Libraries/Image/RCTImageURLLoader.h#L26-L81), [`RCTURLRequestHandler`](https://github.com/facebook/react-native/blob/00d5caee9921b6c10be8f7d5b3903c6afe8dbefa/packages/react-native/React/Base/RCTURLRequestHandler.h#L11-L52), [`RCTImageDataDecoder`](https://github.com/facebook/react-native/blob/00d5caee9921b6c10be8f7d5b3903c6afe8dbefa/packages/react-native/Libraries/Image/RCTImageDataDecoder.h#L15-L53).
+  - `.components[componentName]`:
+    - `.className`: 이 컴포넌트의 ObjC 클래스 (예: `TextInput` -> `RCTTextInput`).
+
+**Codegen**이 실행되면 앱의 모든 의존성을 탐색하며 특정 규칙을 따르는 JS 파일을 찾아 필요한 코드를 생성합니다.
+
+- Turbo Native Modules은 spec 파일 이름 앞에 `Native`를 붙여야 합니다. 예를 들어 `NativeLocalStorage.ts`는 유효한 spec 파일 이름입니다.
+- Native Fabric Components는 spec 파일 이름 뒤에 `NativeComponent`를 붙여야 합니다. 예를 들어 `WebViewNativeComponent.ts`는 유효한 spec 파일 이름입니다.
+
+## **Codegen** 실행하기
+
+이 가이드의 나머지 부분은 프로젝트에 Native Turbo Module, Native Fabric Component 또는 둘 다 이미 설정되어 있다고 가정합니다. 또한 `package.json`의 `jsSrcsDir`에 지정된 폴더 안에 유효한 spec 파일이 있다고 가정합니다.
+
+### Android
+
+Android용 **Codegen**은 React Native Gradle Plugin(RNGP)과 통합되어 있습니다. RNGP에는 `package.json` 파일에 정의된 구성을 읽고 **Codegen**을 실행하는 태스크가 포함되어 있습니다. gradle 태스크를 실행하려면 먼저 프로젝트의 `android` 폴더로 이동한 후 다음을 실행하세요.
+
+```bash
+./gradlew generateCodegenArtifactsFromSchema
+```
+
+이 태스크는 앱의 모든 임포트된 프로젝트(앱 및 연결된 모든 node 모듈)에서 `generateCodegenArtifactsFromSchema` 명령을 실행합니다. 해당 `node_modules/<dependency>` 폴더에 코드를 생성합니다. 예를 들어, Node 모듈 이름이 `my-fabric-component`인 Fabric Native Component가 있다면 생성된 코드는 `SampleApp/node_modules/my-fabric-component/android/build/generated/source/codegen` 경로에 위치합니다. 앱의 경우 코드는 `android/app/build/generated/source/codegen` 폴더에 생성됩니다.
+
+#### 생성된 코드
+
+위의 gradle 명령을 실행하면 `SampleApp/android/app/build` 폴더에서 codegen 코드를 찾을 수 있습니다. 구조는 다음과 같습니다.
+
+```
+build
+└── generated
+    └── source
+        └── codegen
+            ├── java
+            │   └── com
+            │       ├── facebook
+            │       │   └── react
+            │       │       └── viewmanagers
+            │       │           ├── <nativeComponent>ManagerDelegate.java
+            │       │           └── <nativeComponent>ManagerInterface.java
+            │       └── sampleapp
+            │           └── NativeLocalStorageSpec.java
+            ├── jni
+            │   ├── <codegenConfig.name>-generated.cpp
+            │   ├── <codegenConfig.name>.h
+            │   ├── CMakeLists.txt
+            │   └── react
+            │       └── renderer
+            │           └── components
+            │               └── <codegenConfig.name>
+            │                   ├── <codegenConfig.name>JSI-generated.cpp
+            │                   ├── <codegenConfig.name>.h
+            │                   ├── ComponentDescriptors.cpp
+            │                   ├── ComponentDescriptors.h
+            │                   ├── EventEmitters.cpp
+            │                   ├── EventEmitters.h
+            │                   ├── Props.cpp
+            │                   ├── Props.h
+            │                   ├── ShadowNodes.cpp
+            │                   ├── ShadowNodes.h
+            │                   ├── States.cpp
+            │                   └── States.h
+            └── schema.json
+```
+
+생성된 코드는 두 폴더로 나뉩니다.
+
+- `java`: 플랫폼별 코드가 포함됩니다.
+- `jni`: JS와 Java가 올바르게 상호작용하는 데 필요한 C++ 코드가 포함됩니다.
+
+`java` 폴더에서는 `com/facebook/viewmanagers` 하위 폴더에서 Fabric Native 컴포넌트 생성 코드를 찾을 수 있습니다.
+
+- `<nativeComponent>ManagerDelegate.java`에는 `ViewManager`가 사용자 정의 Native Component에서 호출할 수 있는 메서드가 포함됩니다.
+- `<nativeComponent>ManagerInterface.java`에는 `ViewManager`의 인터페이스가 포함됩니다.
+
+`codegenConfig.android.javaPackageName`에 설정된 이름의 폴더에는 Turbo Native Module이 작업을 수행하기 위해 구현해야 하는 추상 클래스가 있습니다.
+
+마지막으로 `jni` 폴더에는 JS와 Android를 연결하는 모든 보일러플레이트 코드가 있습니다.
+
+- `<codegenConfig.name>.h`: 사용자 정의 C++ Turbo Native Modules의 인터페이스가 포함됩니다.
+- `<codegenConfig.name>-generated.cpp`: 사용자 정의 C++ Turbo Native Modules의 글루 코드가 포함됩니다.
+- `react/renderer/components/<codegenConfig.name>`: 이 폴더에는 사용자 정의 컴포넌트에 필요한 모든 글루 코드가 포함됩니다.
+
+이 구조는 `codegenConfig.type` 필드에 `all` 값을 사용하여 생성된 것입니다. `modules` 값을 사용하면 `react/renderer/components/` 폴더가 생성되지 않습니다. `components` 값을 사용하면 다른 파일들은 생성되지 않습니다.
+
+### iOS
+
+iOS용 **Codegen**은 빌드 프로세스 중에 실행되는 일부 Node 스크립트에 의존합니다. 스크립트는 `SampleApp/node_modules/react-native/scripts/` 폴더에 위치합니다.
+
+메인 스크립트는 `generate-codegen-artifacts.js`입니다. 앱의 루트 폴더에서 다음 명령을 실행하여 스크립트를 호출할 수 있습니다.
+
+```bash
+node node_modules/react-native/scripts/generate-codegen-artifacts.js
+
+Usage: generate-codegen-artifacts.js -p [path to app] -t [target platform] -o [output path]
+
+Options:
+      --help            Show help                                      [boolean]
+      --version         Show version number                            [boolean]
+  -p, --path            Path to the React Native project root.        [required]
+  -t, --targetPlatform  Target platform. Supported values: "android", "ios",
+                        "all".                                        [required]
+  -o, --outputPath      Path where generated artifacts will be output to.
+```
+
+각 옵션의 의미는 다음과 같습니다.
+
+- `--path`: 앱의 루트 폴더 경로입니다.
+- `--outputPath`: **Codegen**이 생성된 파일을 출력할 대상 경로입니다.
+- `--targetPlatform`: 코드를 생성할 플랫폼입니다.
+
+#### 생성된 코드
+
+다음 인수로 스크립트를 실행하면:
+
+```shell
+node node_modules/react-native/scripts/generate-codegen-artifacts.js \
+    --path . \
+    --outputPath ios/ \
+    --targetPlatform ios
+```
+
+`ios/build` 폴더에 다음 파일들이 생성됩니다.
+
+```
+build
+└── generated
+    └── ios
+        ├── <codegenConfig.name>
+        │   ├── <codegenConfig.name>-generated.mm
+        │   └── <codegenConfig.name>.h
+        ├── <codegenConfig.name>JSI-generated.cpp
+        ├── <codegenConfig.name>JSI.h
+        ├── FBReactNativeSpec
+        │   ├── FBReactNativeSpec-generated.mm
+        │   └── FBReactNativeSpec.h
+        ├── FBReactNativeSpecJSI-generated.cpp
+        ├── FBReactNativeSpecJSI.h
+        ├── RCTModulesConformingToProtocolsProvider.h
+        ├── RCTModulesConformingToProtocolsProvider.mm
+        └── react
+            └── renderer
+                └── components
+                    └── <codegenConfig.name>
+                        ├── ComponentDescriptors.cpp
+                        ├── ComponentDescriptors.h
+                        ├── EventEmitters.cpp
+                        ├── EventEmitters.h
+                        ├── Props.cpp
+                        ├── Props.h
+                        ├── RCTComponentViewHelpers.h
+                        ├── ShadowNodes.cpp
+                        ├── ShadowNodes.h
+                        ├── States.cpp
+                        └── States.h
+```
+
+이 생성 파일들의 일부는 React Native Core에서 사용됩니다. 그리고 `package.json`의 `codegenConfig.name` 필드에 지정한 이름과 동일한 이름을 포함하는 파일 집합이 있습니다.
+
+- `<codegenConfig.name>/<codegenConfig.name>.h`: 사용자 정의 iOS Turbo Native Modules의 인터페이스가 포함됩니다.
+- `<codegenConfig.name>/<codegenConfig.name>-generated.mm`: 사용자 정의 iOS Turbo Native Modules의 글루 코드가 포함됩니다.
+- `<codegenConfig.name>JSI.h`: 사용자 정의 C++ Turbo Native Modules의 인터페이스가 포함됩니다.
+- `<codegenConfig.name>JSI-generated.h`: 사용자 정의 C++ Turbo Native Modules의 글루 코드가 포함됩니다.
+- `react/renderer/components/<codegenConfig.name>`: 이 폴더에는 사용자 정의 컴포넌트에 필요한 모든 글루 코드가 포함됩니다.
+
+이 구조는 `codegenConfig.type` 필드에 `all` 값을 사용하여 생성된 것입니다. `modules` 값을 사용하면 `react/renderer/components/` 폴더가 생성되지 않습니다. `components` 값을 사용하면 다른 파일들은 생성되지 않습니다.

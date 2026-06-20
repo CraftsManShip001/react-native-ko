@@ -1,0 +1,196 @@
+# 모듈을 위한 라이브러리 만들기
+
+React Native는 일반적인 문제를 해결하기 위한 풍부한 라이브러리 생태계를 갖추고 있습니다. [reactnative.directory](https://reactnative.directory) 웹사이트에서 React Native 라이브러리를 모아두고 있으며, 이는 모든 React Native 개발자가 즐겨찾기에 추가해 두면 좋은 훌륭한 자료입니다.
+
+때로는 코드 재사용을 위해 별도의 라이브러리로 추출할 가치가 있는 모듈을 개발하고 있을 수 있습니다. 모든 앱에서 재사용하고 싶은 라이브러리, 오픈소스 컴포넌트로 생태계에 배포하고 싶은 라이브러리, 또는 판매하고 싶은 라이브러리일 수 있습니다.
+
+이 가이드에서 배울 내용:
+
+- 모듈을 라이브러리로 추출하는 방법
+- NPM을 사용하여 라이브러리를 배포하는 방법
+
+## 모듈을 라이브러리로 추출하기
+
+새 라이브러리를 만들기 위해 [`create-react-native-library`](https://callstack.github.io/react-native-builder-bob/create) 도구를 사용할 수 있습니다. 이 도구는 필요한 모든 보일러플레이트 코드(모든 설정 파일과 다양한 플랫폼에 필요한 파일)를 갖춘 새 라이브러리를 설정합니다. 또한 라이브러리 생성 과정을 안내하는 편리한 대화형 메뉴도 제공합니다.
+
+모듈을 별도의 라이브러리로 추출하려면 다음 단계를 따르세요:
+
+1. 새 라이브러리 만들기
+2. 앱에서 라이브러리로 코드 이동하기
+3. 새 구조를 반영하도록 코드 업데이트하기
+4. 게시하기
+
+### 1. 라이브러리 만들기
+
+1. 다음 명령을 실행하여 생성 프로세스를 시작합니다:
+
+```sh
+npx create-react-native-library@latest <Name of Your Library>
+```
+
+2. 모듈 이름을 추가합니다. 유효한 npm 이름이어야 하므로 모두 소문자여야 합니다. `-`를 사용하여 단어를 구분할 수 있습니다.
+3. 패키지 설명을 추가합니다.
+4. _"개발하려는 라이브러리 유형은 무엇인가요?"_ 질문에 도달할 때까지 양식을 계속 작성합니다.
+   ![라이브러리 유형](/docs/assets/what-library.png)
+5. 이 가이드의 목적을 위해 _Turbo module_ 옵션을 선택합니다. 새로운 아키텍처와 레거시 아키텍처 모두를 위한 라이브러리를 만들 수 있음을 참고하세요.
+6. 그런 다음 플랫폼에 액세스하는 라이브러리(Kotlin & Objective-C)를 원하는지 또는 공유 C++ 라이브러리(Android와 iOS를 위한 C++)를 원하는지 선택할 수 있습니다.
+7. 마지막으로 마지막 옵션으로 `Test App`을 선택합니다. 이 옵션은 라이브러리 폴더 내에 이미 구성된 별도의 앱과 함께 라이브러리를 만듭니다.
+
+대화형 프롬프트가 완료되면, 도구는 Visual Studio Code에서 다음과 같은 구조의 폴더를 만듭니다:
+
+<img
+  className="half-size"
+  alt="새 라이브러리를 초기화한 후의 폴더 구조."
+  src="/docs/assets/turbo-native-modules/c++visualstudiocode.webp"
+/>
+
+생성된 코드를 자유롭게 탐색해 보세요. 가장 중요한 부분은 다음과 같습니다:
+
+- `android` 폴더: Android 코드가 위치하는 곳입니다
+- `cpp` 폴더: C++ 코드가 위치하는 곳입니다
+- `ios` 폴더: iOS 코드가 위치하는 곳입니다
+- `src` 폴더: JS 코드가 위치하는 곳입니다
+
+`package.json`은 이름과 패키지 설명을 포함하여 `create-react-native-library` 도구에 제공한 모든 정보로 이미 설정되어 있습니다. `package.json`은 Codegen을 실행하도록도 이미 설정되어 있음을 참고하세요.
+
+```json
+  "codegenConfig": {
+    "name": "RN<your module name>Spec",
+    "type": "all",
+    "jsSrcsDir": "src",
+    "outputDir": {
+      "ios": "ios/generated",
+      "android": "android/generated"
+    },
+    "android": {
+      "javaPackageName": "com.<name-of-the-module>"
+    }
+  },
+```
+
+마지막으로, 라이브러리에는 iOS와 Android에 라이브러리를 연결할 수 있는 모든 인프라가 이미 포함되어 있습니다.
+
+### 2. 앱에서 코드 복사하기
+
+이 가이드의 나머지 부분은 웹사이트의 다른 가이드, 즉 플랫폼별 Turbo 네이티브 모듈 또는 [크로스 플랫폼 Turbo 네이티브 모듈](./pure-cxx-modules)에 표시된 지침에 따라 앱에 로컬 Turbo 네이티브 모듈이 있다고 가정합니다. 하지만 컴포넌트 및 레거시 아키텍처 모듈과 컴포넌트에도 적용됩니다. 복사하고 업데이트해야 할 파일을 적절히 조정해야 합니다.
+
+{/* TODO: add links for Turbo Native Modules */}
+
+1. **[레거시 아키텍처 모듈 및 컴포넌트에는 필요하지 않음]** 앱의 `specs` 폴더에 있는 코드를 `create-react-native-library` 폴더가 만든 `src` 폴더로 이동합니다.
+2. 라이브러리에서 접근할 수 있도록 Turbo 네이티브 모듈 spec을 올바르게 내보내도록 `index.ts` 파일을 업데이트합니다. 예를 들면:
+
+```ts
+import NativeSampleModule from './NativeSampleModule';
+
+export default NativeSampleModule;
+```
+
+3. 네이티브 모듈을 복사합니다:
+   - 네이티브 모듈을 위해 앱에 작성한 코드가 있다면, `android/src/main/java/com/<name-of-the-module>`의 코드를 교체합니다.
+   - 네이티브 모듈을 위해 앱에 작성한 코드가 있다면, `ios` 폴더의 코드를 교체합니다.
+   - 네이티브 모듈을 위해 앱에 작성한 코드가 있다면, `cpp` 폴더의 코드를 교체합니다.
+
+4. **[레거시 아키텍처 모듈 및 컴포넌트에는 필요하지 않음]** 이전 spec 이름에 대한 모든 참조를 라이브러리의 `package.json`의 `codegenConfig` 필드에 정의된 새 spec 이름으로 업데이트합니다. 예를 들어, 앱 `package.json`에서 `codegenConfig.name`으로 `AppSpecs`를 설정했고 라이브러리에서는 `RNNativeSampleModuleSpec`이라면, `AppSpecs`의 모든 항목을 `RNNativeSampleModuleSpec`으로 교체해야 합니다.
+
+완료입니다! 앱에서 필요한 모든 코드를 별도의 라이브러리로 이동했습니다.
+
+## 라이브러리 테스트하기
+
+`create-react-native-library`에는 라이브러리와 함께 올바르게 작동하도록 이미 구성된 유용한 예시 애플리케이션이 포함되어 있습니다. 테스트하기에 좋은 방법입니다!
+
+`example` 폴더를 살펴보면, [`react-native-community/template`](https://github.com/react-native-community/template)에서 만들 수 있는 새 React Native 애플리케이션과 동일한 구조를 찾을 수 있습니다.
+
+라이브러리를 테스트하려면:
+
+1. `example` 폴더로 이동합니다.
+2. `yarn install`을 실행하여 모든 의존성을 설치합니다.
+3. iOS의 경우에만, CocoaPods를 설치해야 합니다: `cd ios && pod install`.
+4. `example` 폴더에서 `yarn android`로 Android를 빌드하고 실행합니다.
+5. `example` 폴더에서 `yarn ios`로 iOS를 빌드하고 실행합니다.
+
+## 라이브러리를 로컬 모듈로 사용하기
+
+라이브러리를 NPM에 게시하지 않고 애플리케이션의 로컬 모듈로 재사용하고 싶은 경우가 있습니다.
+
+이 경우, 라이브러리가 앱과 형제 관계로 위치하는 시나리오가 될 수 있습니다.
+
+```shell
+Development
+├── App
+└── Library
+```
+
+이 경우에도 `create-react-native-library`로 만든 라이브러리를 사용할 수 있습니다.
+
+1. `App` 폴더로 이동하여 `yarn add ../Library`를 실행하여 앱에 라이브러리를 추가합니다.
+2. iOS의 경우에만, `App/ios` 폴더로 이동하여 `bundle exec pod install`을 실행하여 의존성을 설치합니다.
+3. 라이브러리의 코드를 가져오도록 `App.tsx` 코드를 업데이트합니다. 예를 들면:
+
+```tsx
+import NativeSampleModule from '../Library/src/index';
+```
+
+지금 앱을 실행하면, Metro가 앱에 제공해야 할 JS 파일을 찾지 못합니다. Metro가 `App` 폴더에서 시작하여 `Library` 폴더에 있는 JS 파일에 접근할 수 없기 때문입니다. 이를 해결하기 위해 `metro.config.js` 파일을 다음과 같이 업데이트합니다.
+
+```diff
+const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+
+/**
+ * Metro configuration
+ * https://reactnative.dev/docs/metro
+ *
+ * @type {import('metro-config').MetroConfig}
+ */
++ const path = require('path');
+
+- const config = {}
++ const config = {
++  // Make Metro able to resolve required external dependencies
++  watchFolders: [
++    path.resolve(__dirname, '../Library'),
++  ],
++  resolver: {
++    extraNodeModules: {
++      'react-native': path.resolve(__dirname, 'node_modules/react-native'),
++    },
++  },
++};
+
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+```
+
+`watchFolders` 설정은 Metro에게 일부 추가 경로(이 경우 필요한 `src/index` 파일이 포함된 `../Library` 경로)에서 파일과 변경 사항을 감시하도록 알려줍니다.
+`resolver` 속성은 라이브러리에 앱이 사용하는 React Native 코드를 제공하기 위해 필요합니다. 라이브러리는 React Native에서 코드를 참조하고 가져올 수 있는데, 추가 리졸버 없이는 라이브러리의 import가 실패합니다.
+
+이 시점에서 평소와 같이 앱을 빌드하고 실행할 수 있습니다:
+
+- `example` 폴더에서 `yarn android`로 Android를 빌드하고 실행합니다.
+- `example` 폴더에서 `yarn ios`로 iOS를 빌드하고 실행합니다.
+
+## NPM에 라이브러리 게시하기
+
+`create-react-native-library` 덕분에 NPM에 모든 것을 게시하기 위한 설정이 이미 갖추어져 있습니다.
+
+1. 모듈에서 `yarn install`로 의존성을 설치합니다.
+2. `yarn prepare`를 실행하여 라이브러리를 빌드합니다.
+3. `yarn release`로 배포합니다.
+
+잠시 후 NPM에서 라이브러리를 찾을 수 있습니다. 확인하려면 다음을 실행합니다:
+
+```bash
+npm view <package.name>
+```
+
+여기서 `package.name`은 라이브러리 초기화 시 `package.json` 파일에서 설정한 `name`입니다.
+
+이제 다음을 실행하여 애플리케이션에 라이브러리를 설치할 수 있습니다:
+
+```bash
+yarn add <package.name>
+```
+
+:::note
+iOS의 경우에만, 네이티브 코드가 포함된 새 모듈을 설치할 때마다 `bundle exec pod install`(권장) 또는 Ruby의 Bundler를 사용하지 않는 경우 `pod install`(권장하지 않음)을 실행하여 CocoaPods를 재설치해야 합니다.
+:::
+
+축하합니다! 첫 번째 React Native 라이브러리를 게시했습니다.
