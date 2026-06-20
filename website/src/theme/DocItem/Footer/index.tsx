@@ -12,7 +12,6 @@ import TagsListInline, {
 
 import type {EditUrlButton} from '../../../../docusaurus.config';
 import styles from './styles.module.css';
-import DocsRating from '../../../../core/DocsRating';
 
 function TagsRow(props: TagsListInlineProps) {
   return (
@@ -77,19 +76,16 @@ export default function DocItemFooter() {
   }
 
   return (
-    <>
-      <DocsRating label={metadata.id} />
-      <footer
-        className={clsx(ThemeClassNames.docs.docFooter, 'docusaurus-mt-lg')}>
-        {canDisplayTagsRow && <TagsRow tags={tags} />}
-        {canDisplayEditMetaRow && (
-          <EditMetaRow
-            editUrl={editUrl}
-            lastUpdatedAt={lastUpdatedAt}
-            lastUpdatedBy={lastUpdatedBy}
-          />
-        )}
-      </footer>
-    </>
+    <footer
+      className={clsx(ThemeClassNames.docs.docFooter, 'docusaurus-mt-lg')}>
+      {canDisplayTagsRow && <TagsRow tags={tags} />}
+      {canDisplayEditMetaRow && (
+        <EditMetaRow
+          editUrl={editUrl}
+          lastUpdatedAt={lastUpdatedAt}
+          lastUpdatedBy={lastUpdatedBy}
+        />
+      )}
+    </footer>
   );
 }
