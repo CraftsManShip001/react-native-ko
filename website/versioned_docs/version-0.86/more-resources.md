@@ -12,7 +12,7 @@ title: 추가 리소스
 - [앱 디자인 및 레이아웃](flexbox)
 - [앱 디버깅](debugging)
 - [크로스 플랫폼 앱 만들기](platform-specific-code)
-- [React Native 커뮤니티 참여하기](/community/overview)
+- [React Native 커뮤니티 참여하기](https://reactnative.dev/community/overview)
 
 ## 심화 학습
 

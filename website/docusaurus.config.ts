@@ -245,16 +245,6 @@ const config: Config = {
         ...commonDocsOptions,
       } satisfies PluginContentDocs.Options,
     ],
-    [
-      'content-docs',
-      {
-        id: 'community',
-        path: 'community',
-        routeBasePath: '/community',
-        sidebarPath: require.resolve('./sidebarsCommunity'),
-        ...commonDocsOptions,
-      } satisfies PluginContentDocs.Options,
-    ],
     // PWA 플러그인은 한국어 사이트에서 비활성화함
     // (dev 모드의 @theme/PwaReloadPopup 미해결 이슈 회피용이며 PWA 기능은 불필요).
     [
@@ -282,7 +272,6 @@ const config: Config = {
           '/docs/more-resources',
           '/docs/**',
           '/architecture/**',
-          '/community/**',
           '/showcase/**',
           '/contributing/**',
           '/versions',
@@ -351,14 +340,6 @@ const config: Config = {
         },
       ],
     },
-    announcementBar: {
-      id: 'watch_keynote',
-      content:
-        'React Conf 2025의 <a target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/watch?v=NiYwlvXsBKw">React Native 키노트</a>를 다시 시청해 보세요',
-      backgroundColor: '#20232a',
-      textColor: '#fff',
-      isCloseable: false,
-    },
     navbar: {
       title: 'React Native',
       logo: {
@@ -401,13 +382,6 @@ const config: Config = {
           label: '기여하기',
           position: 'right',
           docsPluginId: 'contributing',
-        },
-        {
-          type: 'doc',
-          docId: 'overview',
-          label: '커뮤니티',
-          position: 'right',
-          docsPluginId: 'community',
         },
         {
           to: '/showcase',
@@ -468,10 +442,6 @@ const config: Config = {
             {
               label: '기여하기',
               to: 'contributing/overview',
-            },
-            {
-              label: '커뮤니티',
-              to: 'community/overview',
             },
             {
               label: '디렉터리',
