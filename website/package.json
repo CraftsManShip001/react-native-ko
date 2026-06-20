@@ -57,6 +57,7 @@
     "@docusaurus/plugin-pwa": "3.10.1",
     "@docusaurus/preset-classic": "3.10.1",
     "@docusaurus/theme-mermaid": "3.10.1",
+    "@easyops-cn/docusaurus-search-local": "patch:@easyops-cn/docusaurus-search-local@npm%3A0.55.2#~/.yarn/patches/@easyops-cn-docusaurus-search-local-npm-0.55.2-384c6e5395.patch",
     "docusaurus-plugin-copy-page-button": "^0.8.2",
     "docusaurus-plugin-sass": "^0.2.6",
     "react": "^19.2.7",

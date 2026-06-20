@@ -1,0 +1,63 @@
+diff --git a/dist/client/client/utils/tokenize.js b/dist/client/client/utils/tokenize.js
+index e79541d6fc4ca48dd92b5f9ee833192d28030bf6..cfba3455632612f02494136123a40dcd954a7233 100644
+--- a/dist/client/client/utils/tokenize.js
++++ b/dist/client/client/utils/tokenize.js
+@@ -19,7 +19,7 @@ export function tokenize(text, language) {
+     if (language.includes("zh")) {
+         // Currently only works fine with letters in Latin alphabet and Chinese.
+         // https://zhuanlan.zhihu.com/p/33335629
+-        regExpMatchWords = /\w+|\p{Unified_Ideograph}+/gu;
++        regExpMatchWords = /\w+|\p{Unified_Ideograph}+|[가-힣]+/gu;
+         // regExpMatchWords = /\p{Unified_Ideograph}+|[^-\s\p{Unified_Ideograph}]+/gu;
+         // https://mothereff.in/regexpu#input=const+regex+%3D+/%5Cp%7BUnified_Ideograph%7D/u%3B&unicodePropertyEscape=1
+         // regExpMatchWords = /\w+|[\u3400-\u4DBF\u4E00-\u9FFC\uFA0E\uFA0F\uFA11\uFA13\uFA14\uFA1F\uFA21\uFA23\uFA24\uFA27-\uFA29\u{20000}-\u{2A6DD}\u{2A700}-\u{2B734}\u{2B740}-\u{2B81D}\u{2B820}-\u{2CEA1}\u{2CEB0}-\u{2EBE0}\u{30000}-\u{3134A}]+/gu
+diff --git a/dist/client/shared/lunrLanguageZh.js b/dist/client/shared/lunrLanguageZh.js
+index 4aec7f04928297d08b14ce6938e3c0361c1ed070..d9523a21776e882dd0b0e59b0132ba4f2265d593 100644
+--- a/dist/client/shared/lunrLanguageZh.js
++++ b/dist/client/shared/lunrLanguageZh.js
+@@ -15,7 +15,7 @@ export function lunrLanguageZh(lunr, tokenizer) {
+     // https://zhuanlan.zhihu.com/p/33335629
+     // https://mothereff.in/regexpu#input=const+regex+%3D+/%5Cp%7BUnified_Ideograph%7D/u%3B&unicodePropertyEscape=1
+     lunr.zh.wordCharacters =
+-        "\\u3400-\\u4DBF\\u4E00-\\u9FFC\\uFA0E\\uFA0F\\uFA11\\uFA13\\uFA14\\uFA1F\\uFA21\\uFA23\\uFA24\\uFA27-\\uFA29\\u{20000}-\\u{2A6DD}\\u{2A700}-\\u{2B734}\\u{2B740}-\\u{2B81D}\\u{2B820}-\\u{2CEA1}\\u{2CEB0}-\\u{2EBE0}\\u{30000}-\\u{3134A}";
++        "\\u3400-\\u4DBF\\u4E00-\\u9FFC\\uFA0E\\uFA0F\\uFA11\\uFA13\\uFA14\\uFA1F\\uFA21\\uFA23\\uFA24\\uFA27-\\uFA29\\u{20000}-\\u{2A6DD}\\u{2A700}-\\u{2B734}\\u{2B740}-\\u{2B81D}\\u{2B820}-\\u{2CEA1}\\u{2CEB0}-\\u{2EBE0}\\u{30000}-\\u{3134A}\\uAC00-\\uD7A3\\u3130-\\u318F\\u1100-\\u11FF";
+     lunr.zh.trimmer = lunr.trimmerSupport.generateTrimmer(lunr.zh.wordCharacters);
+     lunr.Pipeline.registerFunction(lunr.zh.trimmer, "trimmer-zh");
+     /* lunr stop word filter. see https://www.ranks.nl/stopwords/chinese-stopwords */
+diff --git a/dist/server/server/utils/tokenizer.js b/dist/server/server/utils/tokenizer.js
+index c0912ffb6820ff49e687cbddf2138bfd9677aeff..a05eebc973a4352c19a8ab79d893deb7e2583528 100644
+--- a/dist/server/server/utils/tokenizer.js
++++ b/dist/server/server/utils/tokenizer.js
+@@ -7,7 +7,7 @@ const lunr_1 = tslib_1.__importDefault(require("lunr"));
+ const jieba_1 = tslib_1.__importDefault(require("@node-rs/jieba"));
+ const cutWordByUnderscore_1 = require("./cutWordByUnderscore");
+ // https://zhuanlan.zhihu.com/p/33335629
+-const RegExpConsecutiveWord = /\w+|\p{Unified_Ideograph}+/u;
++const RegExpConsecutiveWord = /\w+|\p{Unified_Ideograph}+|[가-힣]+/u;
+ let userDictLoaded = false;
+ function loadUserDict(zhUserDict, zhUserDictPath) {
+     if (userDictLoaded) {
+@@ -57,6 +57,10 @@ function tokenizer(input, metadata) {
+             }
+             start += word.length;
+         }
++        else if (/[가-힣]/.test(word[0])) {
++            tokens.push(new lunr_1.default.Token(word, Object.assign(Object.assign({}, lunr_1.default.utils.clone(metadata)), { position: [start, word.length], index: tokens.length })));
++            start += word.length;
++        }
+         else {
+             for (const zhWord of jieba_1.default.cut(word)) {
+                 tokens.push(new lunr_1.default.Token(zhWord, Object.assign(Object.assign({}, lunr_1.default.utils.clone(metadata)), { position: [start, zhWord.length], index: tokens.length })));
+diff --git a/dist/server/shared/lunrLanguageZh.js b/dist/server/shared/lunrLanguageZh.js
+index 1af24510ba5beda2b199d318c47f401cabe1f751..f2848e422f73a5f6633eb06469de6d1b9d4300cf 100644
+--- a/dist/server/shared/lunrLanguageZh.js
++++ b/dist/server/shared/lunrLanguageZh.js
+@@ -18,7 +18,7 @@ function lunrLanguageZh(lunr, tokenizer) {
+     // https://zhuanlan.zhihu.com/p/33335629
+     // https://mothereff.in/regexpu#input=const+regex+%3D+/%5Cp%7BUnified_Ideograph%7D/u%3B&unicodePropertyEscape=1
+     lunr.zh.wordCharacters =
+-        "\\u3400-\\u4DBF\\u4E00-\\u9FFC\\uFA0E\\uFA0F\\uFA11\\uFA13\\uFA14\\uFA1F\\uFA21\\uFA23\\uFA24\\uFA27-\\uFA29\\u{20000}-\\u{2A6DD}\\u{2A700}-\\u{2B734}\\u{2B740}-\\u{2B81D}\\u{2B820}-\\u{2CEA1}\\u{2CEB0}-\\u{2EBE0}\\u{30000}-\\u{3134A}";
++        "\\u3400-\\u4DBF\\u4E00-\\u9FFC\\uFA0E\\uFA0F\\uFA11\\uFA13\\uFA14\\uFA1F\\uFA21\\uFA23\\uFA24\\uFA27-\\uFA29\\u{20000}-\\u{2A6DD}\\u{2A700}-\\u{2B734}\\u{2B740}-\\u{2B81D}\\u{2B820}-\\u{2CEA1}\\u{2CEB0}-\\u{2EBE0}\\u{30000}-\\u{3134A}\\uAC00-\\uD7A3\\u3130-\\u318F\\u1100-\\u11FF";
+     lunr.zh.trimmer = lunr.trimmerSupport.generateTrimmer(lunr.zh.wordCharacters);
+     lunr.Pipeline.registerFunction(lunr.zh.trimmer, "trimmer-zh");
+     /* lunr stop word filter. see https://www.ranks.nl/stopwords/chinese-stopwords */

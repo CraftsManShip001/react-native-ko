@@ -74,7 +74,23 @@ const config: Config = {
   markdown: {
     mermaid: true,
   },
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: [
+    '@docusaurus/theme-mermaid',
+    [
+      require.resolve('@easyops-cn/docusaurus-search-local'),
+      {
+        // 외부 서비스 없이 사이트 콘텐츠를 직접 색인하는 로컬 검색.
+        // zh(CJK) 경로를 활성화하고 토크나이저/트리머에 한글 범위를 추가하도록
+        // 패치(.yarn/patches)하여 한국어 검색이 동작한다.
+        language: ['en', 'zh'],
+        hashed: true,
+        indexBlog: false,
+        docsRouteBasePath: ['docs', 'architecture', 'contributing'],
+        highlightSearchTermsOnTargetPage: true,
+        explicitSearchResultPath: true,
+      },
+    ],
+  ],
   future: {
     // Turns Docusaurus v4 future flags on to make it easier to upgrade later
     v4: true,
@@ -494,12 +510,6 @@ const config: Config = {
         href: 'https://opensource.fb.com/',
       },
       copyright,
-    },
-    algolia: {
-      appId: '8TDSE0OHGQ',
-      apiKey: '83cd239c72f9f8b0ed270a04b1185288',
-      indexName: 'react-native-v2',
-      contextualSearch: true,
     },
     metadata: [
       {
