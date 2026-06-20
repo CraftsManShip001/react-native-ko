@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rn-ko",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "workspace",
+        "react-native-website",
+        "start",
+        "--no-open",
+        "--port",
+        "3001"
+      ],
+      "port": 3001
+    }
+  ]
+}
