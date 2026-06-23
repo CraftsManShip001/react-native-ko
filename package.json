@@ -2,6 +2,7 @@
   "name": "react-native-website-monorepo",
   "private": true,
   "type": "module",
+  "packageManager": "yarn@4.0.2",
   "engines": {
     "node": ">=22"
   },

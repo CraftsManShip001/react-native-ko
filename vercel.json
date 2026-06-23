@@ -1,7 +1,7 @@
 {
-  "buildCommand": "yarn build:vercel",
+  "buildCommand": "yarn workspace react-native-website build:vercel",
   "devCommand": "yarn start",
-  "outputDirectory": "build",
+  "outputDirectory": "website/build",
   "installCommand": "yarn install",
   "framework": null,
   "git": {
